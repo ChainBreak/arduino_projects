@@ -103,9 +103,23 @@ StatePtr state_shaking_function(bool first_pass, unsigned long elapsed_millis){
 }
 
 StatePtr state_banging_function( bool first_pass, unsigned long elapsed_millis){
-  const long wait_time=2000;
+  static long period = 300;
+  static long num_bangs;
+  static long wait_time;
   
-  if ((elapsed_millis % 250) > 125){
+  if (first_pass){
+    period = random(300,400);
+    num_bangs = random(1,5);
+    wait_time = period * num_bangs;
+    Serial.print("Period: ");
+    Serial.println(period);
+    Serial.print("Num Bangs: ");
+    Serial.println(num_bangs);
+    Serial.print("Wait Time: ");
+    Serial.println(wait_time);
+  }
+  
+  if ((elapsed_millis % period) > (period/2)){
     bang_motor.forward();
   }else{
     bang_motor.reverse();
