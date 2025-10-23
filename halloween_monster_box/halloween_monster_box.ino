@@ -9,7 +9,7 @@ State state_wakeup_shake;
 State state_init_wait;
 State state_sleeping;
 State state_shaking;
-
+State state_banging;
 
 StateMachine main_state_machine("Main", &state_wakeup_shake);
 
@@ -24,6 +24,7 @@ void setup() {
   state_init_wait = {"Init Wait", &state_init_wait_function};
   state_sleeping = {"Sleeping", &state_sleeping_function};
   state_shaking = {"Shaking", &state_shaking_function};
+  state_banging = {"Banging", &state_banging_function};
 
 }
 
@@ -35,13 +36,17 @@ void loop() {
 StatePtr state_wakeup_shake_function( bool first_pass, unsigned long elapsed_millis){
   const long wait_time=1000;
   
-  if ((elapsed_millis % 50) > 25)
+  if ((elapsed_millis % 50) > 25){
     shake_motor.forward();
-  else
+    bang_motor.forward();
+  }else{
     shake_motor.reverse();
+    bang_motor.reverse();
+  }
 
   if (elapsed_millis > wait_time){
     shake_motor.stop();
+    bang_motor.stop();
     return &state_init_wait;
   }
   return nullptr;
@@ -60,7 +65,7 @@ StatePtr state_sleeping_function(bool first_pass, unsigned long elapsed_millis){
   static long sleep_time;
 
   if (first_pass){
-    sleep_time = random(5000,15000);
+    sleep_time = random(5000,12000);
     Serial.print("Sleep Time: ");
     Serial.println(sleep_time);
   }
@@ -68,7 +73,13 @@ StatePtr state_sleeping_function(bool first_pass, unsigned long elapsed_millis){
   shake_motor.stop();
   
   if (elapsed_millis > sleep_time){
-    return &state_shaking;
+    switch (random(2)) {
+      case 0:
+        return &state_shaking;
+      case 1:
+        return &state_banging;
+    }
+    
   }
   return nullptr;
 }
@@ -86,6 +97,22 @@ StatePtr state_shaking_function(bool first_pass, unsigned long elapsed_millis){
 
   if (elapsed_millis > shake_time){
     shake_motor.stop();
+    return &state_sleeping;
+  }
+  return nullptr;
+}
+
+StatePtr state_banging_function( bool first_pass, unsigned long elapsed_millis){
+  const long wait_time=2000;
+  
+  if ((elapsed_millis % 250) > 125){
+    bang_motor.forward();
+  }else{
+    bang_motor.reverse();
+  }
+
+  if (elapsed_millis > wait_time){
+    bang_motor.stop();
     return &state_sleeping;
   }
   return nullptr;
